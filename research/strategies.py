@@ -113,3 +113,81 @@ class DonchianBreakout:
                 self._stop = bar.close + self.atr_mult * atr
                 return Order(Side.SELL, qty)
         return None
+
+
+class RsiMeanReversion:
+    """S2: buy RSI(3) < 10 dips, only above SMA(200). Long-only.
+
+    Exit when close recovers above SMA(20) or RSI(3) > 70; hard stop at
+    entry - 2 x ATR(20). Same fixed-risk sizing as S1.
+    """
+
+    def __init__(self, rsi_period: int = 3, rsi_entry: float = 10.0,
+                 rsi_exit: float = 70.0, trend: int = 200, mean: int = 20,
+                 atr_period: int = 20, atr_mult: float = 2.0,
+                 risk: float = 0.01) -> None:
+        self.rsi_period, self.rsi_entry, self.rsi_exit = rsi_period, rsi_entry, rsi_exit
+        self.trend, self.mean = trend, mean
+        self.atr_period, self.atr_mult, self.risk = atr_period, atr_mult, risk
+        self._closes: deque = deque(maxlen=trend)
+        self._trs: deque = deque(maxlen=atr_period)
+        self._atr: Optional[float] = None
+        self._prev_close: Optional[float] = None
+        self._avg_gain: Optional[float] = None
+        self._avg_loss: Optional[float] = None
+        self._rsi: Optional[float] = None
+        self._changes: deque = deque(maxlen=rsi_period)
+        self._stop: Optional[float] = None
+
+    def _ready(self) -> bool:
+        return len(self._closes) == self.trend and self._rsi is not None and self._atr is not None
+
+    def _update(self, bar: Bar) -> None:
+        if self._prev_close is not None:
+            tr = max(bar.high - bar.low,
+                     abs(bar.high - self._prev_close),
+                     abs(bar.low - self._prev_close))
+            self._trs.append(tr)
+            if len(self._trs) == self.atr_period:
+                self._atr = (sum(self._trs) / self.atr_period if self._atr is None
+                             else (self._atr * (self.atr_period - 1) + tr) / self.atr_period)
+            d = bar.close - self._prev_close
+            gain, loss = max(d, 0.0), max(-d, 0.0)
+            if self._avg_gain is None:
+                self._changes.append((gain, loss))
+                if len(self._changes) == self.rsi_period:
+                    self._avg_gain = sum(g for g, _ in self._changes) / self.rsi_period
+                    self._avg_loss = sum(l for _, l in self._changes) / self.rsi_period
+            else:
+                self._avg_gain = (self._avg_gain * (self.rsi_period - 1) + gain) / self.rsi_period
+                self._avg_loss = (self._avg_loss * (self.rsi_period - 1) + loss) / self.rsi_period
+            if self._avg_gain is not None:
+                self._rsi = 100.0 if self._avg_loss == 0 else (
+                    100 - 100 / (1 + self._avg_gain / self._avg_loss))
+        self._closes.append(bar.close)
+        self._prev_close = bar.close
+
+    def on_bar(self, bar: Bar, broker: Broker) -> Optional[Order]:
+        rsi_now, atr_now = self._rsi, self._atr
+        sma_trend = sum(self._closes) / self.trend if len(self._closes) == self.trend else None
+        closes_mean = list(self._closes)[-self.mean:]
+        sma_mean = sum(closes_mean) / len(closes_mean) if len(closes_mean) == self.mean else None
+        self._update(bar)
+
+        if not self._ready():
+            return None
+
+        pos = broker.position
+        if pos > 0 and self._stop is not None:
+            hit_stop = bar.low <= self._stop
+            hit_mean = sma_mean is not None and bar.close > sma_mean
+            hit_rsi = rsi_now is not None and rsi_now > self.rsi_exit
+            if hit_stop or hit_mean or hit_rsi:
+                return Order(Side.SELL, pos)
+
+        if (pos == 0 and rsi_now is not None and rsi_now < self.rsi_entry
+                and sma_trend is not None and bar.close > sma_trend and atr_now):
+            qty = self.risk * broker.equity(bar.close) / (self.atr_mult * atr_now)
+            self._stop = bar.close - self.atr_mult * atr_now
+            return Order(Side.BUY, qty)
+        return None
