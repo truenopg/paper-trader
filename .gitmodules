@@ -1,0 +1,3 @@
+[submodule "vendor/backtest-engine"]
+	path = vendor/backtest-engine
+	url = https://github.com/truenopg/backtest-engine.git
