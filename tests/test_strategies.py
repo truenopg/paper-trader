@@ -119,3 +119,57 @@ class TestRsiMeanReversion(unittest.TestCase):
         crash[0] = Bar(crash[0].ts, 118.0, 119.0, 100.0, 101.0, 100.0)
         bt.run(crash + make_bars([100.5]))
         self.assertEqual(bt.broker.position, 0)
+
+
+def pullback_and_rally():
+    """Uptrend, 20-bar pullback (fast SMA below slow), 25-bar rally (cross up)."""
+    closes = [100.0 + 0.1 * i for i in range(210)]
+    closes += [closes[-1] - 0.6 * i for i in range(1, 21)]
+    closes += [closes[-1] + 1.2 * i for i in range(1, 26)]
+    return closes + [closes[-1] + 0.5]
+
+
+class TestSmaTrendCross(unittest.TestCase):
+    def test_entry_on_bullish_cross_above_sma200(self):
+        from research.strategies import SmaTrendCross
+        bt = Backtest(SmaTrendCross(), Broker(10_000.0, CostModel(0, 0)))
+        closes = pullback_and_rally()
+        bars = make_bars(closes)
+        bt.run(bars)
+        buys = [f for f in bt.broker.fills if f.side.value == "buy"]
+        self.assertEqual(len(buys), 1)
+        # qty x (2 x ATR at the signal bar) risks 1% of the 10k account
+        from research.indicators import atr as atr_ind
+        signal_i = bt.timestamps.index(buys[0].ts) - 1
+        atr_val = atr_ind([b.high for b in bars], [b.low for b in bars],
+                          [b.close for b in bars], 20)[signal_i]
+        self.assertAlmostEqual(buys[0].qty * 2.0 * atr_val, 100.0, delta=1.0)
+
+    def test_no_entry_below_sma200(self):
+        from research.strategies import SmaTrendCross
+        # mirror image: downtrend, pullback up, roll back over - shorts blocked
+        closes = [300.0 - 0.1 * i for i in range(210)]
+        closes += [closes[-1] + 0.6 * i for i in range(1, 21)]
+        closes += [closes[-1] - 1.2 * i for i in range(1, 26)]
+        bt = Backtest(SmaTrendCross(), Broker(10_000.0, CostModel(0, 0)))
+        bt.run(make_bars(closes))
+        longs = [f for f in bt.broker.fills if f.side.value == "buy"]
+        self.assertEqual(len(longs), 0)
+
+    def test_trail_variant_exits_on_opposite_cross(self):
+        from research.strategies import SmaTrendCross
+        bt = Backtest(SmaTrendCross(), Broker(10_000.0, CostModel(0, 0)))
+        bt.run(make_bars(pullback_and_rally()))
+        self.assertGreater(bt.broker.position, 0)
+        bt.run(make_bars([139.0 - 0.8 * i for i in range(1, 45)]))
+        self.assertEqual(bt.broker.position, 0)
+
+    def test_target_variant_exits_in_profit(self):
+        from research.strategies import SmaTrendCross
+        bt = Backtest(SmaTrendCross(target_r=3.0), Broker(10_000.0, CostModel(0, 0)))
+        bt.run(make_bars(pullback_and_rally()))
+        # the rally itself carries through 3R: exited without any extra bars
+        self.assertEqual(bt.broker.position, 0)
+        self.assertEqual(len(bt.broker.fills), 2)
+        buy, sell = bt.broker.fills
+        self.assertGreater(sell.price, buy.price)
