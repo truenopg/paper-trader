@@ -11,15 +11,16 @@ not get to trade paper money.
 
 ## Status
 
-Week 1 of the project: strategy research. The `research/` folder holds fully
-specified rule-based strategies for XAUUSD and BTC - objective entries,
-exits, filters and sizing, written so a human can execute them manually with
-discipline (no EA required) - plus their honest backtest results, including
-the failures. Only validated strategies get wired into the live bot.
+Research phase done: three rule-based strategies for XAUUSD and BTC are
+specified, backtested on real data with realistic costs and an
+in-sample / out-of-sample split, and tested against shuffled-price nulls.
+Results, including the failures, are in [research/README.md](research/README.md).
+Short version: nothing beats buy & hold on return; the Donchian breakout is the
+most consistent and cuts drawdown a lot. Next: the live paper broker.
 
 ## Roadmap
 
-- `research/` rule-based strategies for XAUUSD/BTC with honest backtests
-- Live data feeds (no paid vendors): Binance klines, stooq
+- [x] `research/` rule-based strategies for XAUUSD/BTC with honest backtests
+- Live data feeds (no paid vendors): Coinbase candles, Yahoo
 - Paper broker: virtual cash, realistic spreads, persisted state
 - Daily P&L report and signal log
