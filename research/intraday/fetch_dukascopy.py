@@ -25,25 +25,38 @@ def fetch_hour(t):
         out.append((t + dt.timedelta(milliseconds=ms), bid / PT, (ask - bid) / PT))
     return t, out
 
-def main(a, b, path):
-    start = dt.datetime.fromisoformat(a); end = dt.datetime.fromisoformat(b)
-    hours = []
-    t = start
-    while t < end:
-        if t.weekday() < 5 or (t.weekday() == 6 and t.hour >= 21) or (t.weekday() == 4 and t.hour < 22):
-            hours.append(t)
+def month_hours(y, m):
+    t = dt.datetime(y, m, 1); out = []
+    while t.month == m:
+        if t.weekday() < 5 and 6 <= t.hour < 18:   # London+NY daytime only (UTC)
+            out.append(t)
         t += dt.timedelta(hours=1)
+    return out
+
+def build_month(y, m, ex, cache):
+    import os
+    f = f"{cache}/{y}-{m:02d}.pkl"
+    if os.path.exists(f): return
     bars = []
-    with ThreadPoolExecutor(32) as ex:
-        for n, (t, ticks) in enumerate(ex.map(fetch_hour, hours)):
-            if ticks:
-                s = pd.DataFrame(ticks, columns=["ts", "bid", "spr"]).set_index("ts")
-                o = s.bid.resample("5min").ohlc(); o["spr"] = s.spr.resample("5min").mean()
-                bars.append(o.dropna())
-            if n % 2000 == 0: print(n, len(hours), flush=True)
-    d = pd.concat(bars).sort_index(); d = d[~d.index.duplicated()]
+    for t, ticks in ex.map(fetch_hour, month_hours(y, m)):
+        if ticks:
+            s = pd.DataFrame(ticks, columns=["ts", "bid", "spr"]).set_index("ts")
+            o = s.bid.resample("5min").ohlc(); o["spr"] = s.spr.resample("5min").mean()
+            bars.append(o.dropna())
+    if bars:
+        pd.concat(bars).to_pickle(f); print("done", y, m, flush=True)
+
+def main(cache="/tmp/duka", workers=200):
+    import glob
+    with ThreadPoolExecutor(workers) as ex:
+        for y in range(2021, 2027):
+            for m in range(1, 13):
+                if (y, m) > (2026, 8): break
+                build_month(y, m, ex, cache)
+    parts = [pd.read_pickle(f) for f in sorted(glob.glob(f"{cache}/*.pkl"))]
+    d = pd.concat(parts).sort_index(); d = d[~d.index.duplicated()]
     d.columns = ["o", "h", "l", "c", "spr"]; d["v"] = 0.0
-    d.to_pickle(path); print(len(d), d.index[0], d.index[-1], "median spread", d.spr.median())
+    d.to_pickle("/tmp/d/XAUUSD_5m.pkl"); print(len(d), d.index[0], d.index[-1], "median spread", d.spr.median())
 
 if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    main()
