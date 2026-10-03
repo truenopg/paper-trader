@@ -16,7 +16,8 @@ specified, backtested on real data with realistic costs and an
 in-sample / out-of-sample split, and tested against shuffled-price nulls.
 Results, including the failures, are in [research/README.md](research/README.md).
 Short version: nothing beats buy & hold on return; the Donchian breakout is the
-most consistent and cuts drawdown a lot. Next: the live paper broker.
+most consistent and cuts drawdown a lot. A one-page [manual playbook](research/PLAYBOOK.md) turns the Donchian rules into
+something tradable by hand. Next: the live paper broker.
 
 ## Roadmap
 
