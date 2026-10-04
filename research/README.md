@@ -67,3 +67,7 @@ structure destroyed). Column = share of shuffled series the real result beats.
 - Stops are checked on daily bars and filled at the next open, so intrabar order is unknown.
 - One IS/OOS split, no walk-forward. The OOS window was bull-trending for both assets.
 - Not investment advice; this is research on past data.
+
+## Intraday follow-up
+A wider search on 5m-4h data (crypto basket and real XAUUSD ticks) with walk-forward
+validation is in [intraday/README.md](intraday/README.md). Short version: no robust intraday winner yet.
