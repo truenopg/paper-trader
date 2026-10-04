@@ -8,7 +8,7 @@ import signals as S
 
 import os
 SC = float(os.environ.get("COST_SCALE", "1"))
-COSTS = {"BTCUSDT": 7.5 * SC, "PAXGUSDT": 3.0 * SC, "ETHUSDT": 7.5 * SC, "SOLUSDT": 10.0 * SC, "BNBUSDT": 10.0 * SC, "XRPUSDT": 10.0 * SC, "ADAUSDT": 10.0 * SC}   # bps per side (x scale)
+COSTS = {"BTCUSDT": 7.5 * SC, "PAXGUSDT": 3.0 * SC, "XAUUSD": 2.0 * SC, "ETHUSDT": 7.5 * SC, "SOLUSDT": 10.0 * SC, "BNBUSDT": 10.0 * SC, "XRPUSDT": 10.0 * SC, "ADAUSDT": 10.0 * SC}   # bps per side (x scale)
 RISK = 0.005       # 0.5% per trade
 DAY_STOP = 0.02    # halt new entries after -2% on the UTC day
 T0, T1, T2 = pd.Timestamp("2021-01-01"), pd.Timestamp("2023-07-01"), pd.Timestamp("2026-09-01")
