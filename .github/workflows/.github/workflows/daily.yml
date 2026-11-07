@@ -1,0 +1,35 @@
+name: daily-paper-run
+
+on:
+  schedule:
+    # 06:15 UTC: yesterday's daily bar is final for both BTC (00:00 UTC
+    # close) and GC=F (CME session closed ~22:00 UTC). GitHub Actions on
+    # public repos is free (docs.github.com/billing); cron can drift a few
+    # minutes, which changes nothing for daily bars.
+    - cron: '15 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests
+        run: python -m unittest discover -s tests
+      - name: Daily paper run
+        run: python live/run_daily.py
+      - name: Commit state and report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/ report/ live/data/
+          git diff --cached --quiet || git commit -m "Daily paper run: $(date -u +%Y-%m-%d)"
+          git push
