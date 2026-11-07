@@ -169,6 +169,14 @@ def main() -> int:
         rows.append({"date": d, "BTC": last_known["BTC"],
                      "XAUUSD": last_known["XAUUSD"],
                      "TOTAL": last_known["BTC"] + last_known["XAUUSD"]})
+    if not rows:
+        # No closed bar on/after LIVE_START yet: one snapshot of the flat
+        # account, dated with the run date. The first closed bar replaces it.
+        tot = sum(r["equity_usd"] for r in results)
+        rows.append({"date": now.strftime("%Y-%m-%d"),
+                     "BTC": results[0]["equity_usd"],
+                     "XAUUSD": results[1]["equity_usd"],
+                     "TOTAL": tot})
     report.write_equity(rows)
 
     total = sum(r["equity_usd"] for r in results)

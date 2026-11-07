@@ -36,7 +36,6 @@ class TestCsvRoundTrip(unittest.TestCase):
                 rows = list(csv.reader(f))
             self.assertEqual(rows[0], ["ts", "open", "high", "low", "close", "volume"])
             self.assertEqual(len(rows), 4)
-            # ISO format preserved
             datetime.strptime(rows[1][0], "%Y-%m-%dT%H:%M:%S")
 
     def test_trim_keeps_newest(self):
