@@ -68,3 +68,20 @@ class TestCheckStale(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestDailyDedup(unittest.TestCase):
+    def test_same_day_newer_timestamp_not_appended(self):
+        # Yahoo re-emits GC=F bars for the same day at a different time.
+        from unittest.mock import patch
+        import live.fetch as lf
+        with TemporaryDirectory() as d:
+            p = Path(d) / "x.csv"
+            base = bar(2)
+            append_bars(p, [base])
+            dupe = (base[0] + 61200,) + base[1:]
+            with patch.object(lf, "fetch_yahoo_daily", return_value=[dupe]):
+                added = lf.update_feed(p, "yahoo")
+            self.assertEqual(added, 0)
+            with open(p) as f:
+                self.assertEqual(len(list(csv.reader(f))), 2)

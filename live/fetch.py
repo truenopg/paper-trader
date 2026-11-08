@@ -121,9 +121,16 @@ def update_feed(path: Path, source: str) -> int:
     else:
         raise ValueError(f"unknown source {source}")
     new = closed_only(new)
+    # Dedup by UTC calendar day, not timestamp: Yahoo moves GC=F bar times
+    # (05:00 vs 21:59:59 for the same day), which would otherwise append a
+    # duplicate daily bar. On conflict the newest version of the day wins.
+    by_day = {}
+    for b in new:
+        by_day[datetime.fromtimestamp(b[0], tz=timezone.utc).date()] = b
     if last:
-        new = [b for b in new if b[0] > last]
-    return append_bars(path, new)
+        last_day = datetime.fromtimestamp(last, tz=timezone.utc).date()
+        by_day = {d: b for d, b in by_day.items() if d > last_day}
+    return append_bars(path, [by_day[d] for d in sorted(by_day)])
 
 
 def check_stale(path: Path, max_gap_days: int) -> Optional[str]:
