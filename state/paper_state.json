@@ -3,10 +3,10 @@
     "BTC": {
       "asset": "BTC",
       "cash_usd": 10000.0,
-      "close": 75753.96,
+      "close": 74754.08,
       "equity_usd": 10000.0,
       "fills": 0,
-      "last_bar_date": "2026-11-07",
+      "last_bar_date": "2026-11-08",
       "open": null,
       "return_pct": 0.0
     },
@@ -23,6 +23,6 @@
   },
   "currency": "USD",
   "note": "Paper money only. Two 10,000 USD sleeves, S1 Donchian 3R, fills at next open, costs per research protocol. Live from 2026-11-07: flat start, no positions inherited from the backtest.",
-  "updated_at": "2026-11-08T13:31:52Z",
+  "updated_at": "2026-11-09T16:29:26Z",
   "warnings": []
 }
