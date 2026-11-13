@@ -3,26 +3,26 @@
     "BTC": {
       "asset": "BTC",
       "cash_usd": 10000.0,
-      "close": 73927.63,
+      "close": 71369.9,
       "equity_usd": 10000.0,
       "fills": 0,
-      "last_bar_date": "2026-11-11",
+      "last_bar_date": "2026-11-12",
       "open": null,
       "return_pct": 0.0
     },
     "XAUUSD": {
       "asset": "XAUUSD",
       "cash_usd": 10000.0,
-      "close": 4000.5,
+      "close": 3885.3,
       "equity_usd": 10000.0,
       "fills": 0,
-      "last_bar_date": "2026-11-11",
+      "last_bar_date": "2026-11-12",
       "open": null,
       "return_pct": 0.0
     }
   },
   "currency": "USD",
   "note": "Paper money only. Two 10,000 USD sleeves, S1 Donchian 3R, fills at next open, costs per research protocol. Live from 2026-11-07: flat start, no positions inherited from the backtest.",
-  "updated_at": "2026-11-12T15:21:41Z",
+  "updated_at": "2026-11-13T14:39:50Z",
   "warnings": []
 }
