@@ -3,7 +3,7 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 from bt.core import Bar, Order, Side
-from live.run_daily import LiveGate, run_asset, ASSETS, CASH_USD
+from live.run_daily import LiveGate, run_asset, ASSETS, CASH_USD, LIVE_START
 
 
 def make_bar(day: int) -> Bar:
@@ -42,12 +42,20 @@ class TestLiveGate(unittest.TestCase):
 class TestRunAssetOnRealData(unittest.TestCase):
     """The live account starts flat: no inherited backtest positions."""
 
-    def test_flat_start(self):
+    def test_no_fills_before_live_start(self):
+        # The gate must suppress every pre-start signal on real data. Once
+        # the strategy trades after LIVE_START, equity leaves 10k and this
+        # is the assertion that keeps holding.
         r = run_asset("BTC", ASSETS["BTC"])
-        self.assertEqual(r["equity_usd"], CASH_USD)
-        self.assertEqual(r["fills"], 0)
-        self.assertIsNone(r["open"])
+        for f in r["_bt"].broker.fills:
+            self.assertGreaterEqual(f.ts, LIVE_START)
         self.assertGreaterEqual(r["last_bar_date"], "2026-11-06")
+
+    def test_flat_until_first_live_signal(self):
+        r = run_asset("BTC", ASSETS["BTC"])
+        if r["fills"] == 0:
+            self.assertEqual(r["equity_usd"], CASH_USD)
+            self.assertIsNone(r["open"])
 
 
 if __name__ == "__main__":
