@@ -5,3 +5,4 @@ bar after the signal, with the cost model applied.
 
 - 2026-11-13 BTC sell 0.02221918 @ 71,280.69 (commission 1.98)
 - 2026-11-17 XAUUSD sell 0.54937827 @ 3,858.92 (commission 0.32)
+- 2026-11-21 BTC buy 0.02221918 @ 58,888.85 (commission 1.64)
